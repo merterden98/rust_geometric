@@ -1,17 +1,18 @@
-use std::{convert::TryInto, ops::Mul};
-use tch::{kind, nn::Init::KaimingUniform, nn::Module, Tensor};
+use std::{convert::TryInto};
+use tch::{nn::Init::KaimingUniform, nn::Module, Tensor};
 
 use super::message_passing::MessagePassing;
 
-struct GCN {
-    in_features: usize,
-    out_features: usize,
+#[derive(Debug)]
+pub struct GCN {
+    in_features: i64,
+    out_features: i64,
     weight: Tensor,
     bias: Tensor,
     linear: tch::nn::Linear,
 }
 impl GCN {
-    fn new(in_features: usize, out_features: usize, store: &tch::nn::Path) -> Self {
+    pub fn new(in_features: i64, out_features: i64, store: &tch::nn::Path) -> Self {
         let mut weight = Tensor::zeros(
             &[
                 in_features.try_into().unwrap(),
@@ -23,8 +24,8 @@ impl GCN {
             &[1, out_features.try_into().unwrap()],
             (tch::Kind::Float, tch::Device::Cpu),
         );
-        weight.init(tch::nn::Init::KaimingUniform);
-        bias.init(tch::nn::Init::KaimingUniform);
+        weight.init(KaimingUniform);
+        bias.init(KaimingUniform);
 
         GCN {
             in_features,
@@ -41,11 +42,9 @@ impl GCN {
     }
 }
 impl MessagePassing for GCN {
-    fn forward(&mut self, input: Tensor, edge_index: Tensor) -> Tensor {
+    fn forward(&self, input: &Tensor, edge_index: &Tensor) -> Tensor {
         let x = self.linear.forward(&input);
-        println!("{:?}", x.size());
-        println!("{:?}", edge_index.size());
-        let new_weight = self.propagate(edge_index, x);
+        let new_weight = self.propagate(edge_index, &x);
         new_weight
     }
     fn get_features(&self) -> Tensor {
@@ -59,11 +58,11 @@ mod tests {
     use super::*;
     use crate::data::graph::GraphProp;
     #[test]
-    pub fn cora_test() {
+    pub fn cora_forward_test() {
         let cora = crate::data::cora::Cora::new().unwrap();
         let vs = tch::nn::VarStore::new(tch::Device::Cpu);
-        let mut gcn = GCN::new(cora.get_features().size()[1] as usize, 20, &vs.root());
-        let out = gcn.forward(cora.get_features(), cora.get_adjacency());
+        let gcn = GCN::new(cora.get_features().size()[1], 20, &vs.root());
+        let _ = gcn.forward(&cora.get_features(), &cora.get_adjacency());
         ()
     }
 }

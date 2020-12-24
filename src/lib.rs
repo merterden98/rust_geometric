@@ -1,5 +1,5 @@
-mod data;
-mod nn;
+pub mod data;
+pub mod nn;
 
 #[cfg(test)]
 mod tests {

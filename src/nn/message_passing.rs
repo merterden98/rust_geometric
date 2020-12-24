@@ -1,11 +1,9 @@
-use tch::nn::Module;
-use tch::IndexOp;
 use tch::Tensor;
-pub trait MessagePassing {
-    fn forward(&mut self, inputs: Tensor, edge_index: Tensor) -> Tensor;
+pub trait MessagePassing{
+    fn forward(&self, inputs: &Tensor, edge_index: &Tensor) -> Tensor;
 
     fn get_features(&self) -> Tensor;
-    fn propagate(&mut self, edge_index: Tensor, w: Tensor) -> Tensor {
+    fn propagate(&self, edge_index: &Tensor, w: &Tensor) -> Tensor {
         let adj_matrix = edge_index;
         println!("{:?} {:?}", adj_matrix, w);
         adj_matrix.mm(&w)
@@ -14,7 +12,7 @@ pub trait MessagePassing {
 
 #[cfg(test)]
 mod tests {
-    use tch::kind;
+    use tch::{IndexOp, kind};
 
     use super::*;
     #[test]
@@ -31,7 +29,7 @@ mod tests {
     }
     struct TestProp();
     impl MessagePassing for TestProp {
-        fn forward(&mut self, _inputs: Tensor, _edge_index: Tensor) -> Tensor {
+        fn forward(&self, _inputs: &Tensor, _edge_index: &Tensor) -> Tensor {
             todo!();
         }
         fn get_features(&self) -> Tensor {
@@ -44,7 +42,6 @@ mod tests {
     }
     #[test]
     fn propagate_test() {
-        let mut tp = TestProp();
         let tensor = tch::Tensor::zeros(&[3, 3], kind::INT64_CPU);
         tensor.i(0).copy_(&tch::Tensor::of_slice(&[0, 1, 0]));
         tensor.i(1).copy_(&tch::Tensor::of_slice(&[1, 0, 0]));
