@@ -1,5 +1,6 @@
 pub mod data;
 pub mod nn;
+pub mod graph;
 
 #[cfg(test)]
 mod tests {
